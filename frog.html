@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🐸 Frog Jump Path Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Baloo 2', sans-serif;
+  background: #f0fdf4;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(134,239,172,0.25) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(147,197,253,0.2) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(253,224,132,0.1) 0%, transparent 60%);
+}
+
+.header {
+  background: white;
+  border-bottom: 3px solid #bbf7d0;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+.header-left h1 { font-size: 1.75rem; font-weight: 800; color: #166534; line-height: 1; }
+.header-left p  { font-size: 0.78rem; color: #6b7280; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+.algo-badge {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  border: 2px solid #86efac;
+  border-radius: 50px;
+  padding: 6px 16px;
+  font-size: 0.78rem; font-weight: 700; color: #15803d; letter-spacing: 0.5px;
+}
+
+.main {
+  max-width: 1100px;
+  margin: 28px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 272px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+.card {
+  background: white;
+  border-radius: 18px;
+  border: 2px solid #e5e7eb;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); }
+
+.card-title {
+  font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 2px; color: #9ca3af; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.field { margin-bottom: 12px; }
+.field:last-of-type { margin-bottom: 0; }
+.field label { display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 6px; }
+.field input[type=number] {
+  width: 100%; padding: 10px 14px;
+  border: 2px solid #e5e7eb; border-radius: 12px;
+  font-family: 'Fira Code', monospace; font-size: 1rem; font-weight: 500;
+  color: #111827; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  background: #f9fafb;
+}
+.field input[type=number]:focus {
+  border-color: #4ade80; box-shadow: 0 0 0 4px rgba(74,222,128,0.15); background: white;
+}
+
+.btn {
+  width: 100%; padding: 12px; border: none; border-radius: 14px;
+  font-family: 'Baloo 2', sans-serif; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: all 0.18s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.btn:last-child { margin-bottom: 0; }
+.btn-create {
+  background: linear-gradient(135deg, #22c55e, #16a34a); color: white;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.35);
+}
+.btn-create:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(34,197,94,0.45); }
+.btn-find {
+  background: linear-gradient(135deg, #f59e0b, #d97706); color: white;
+  box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+}
+.btn-find:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,158,11,0.45); }
+.btn-find:disabled { background: #e5e7eb; color: #9ca3af; box-shadow: none; transform: none; cursor: not-allowed; }
+.btn:active { transform: translateY(1px) !important; }
+
+/* Result card */
+.result-card {
+  background: white; border-radius: 18px; border: 2px solid #e5e7eb;
+  padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+  transition: border-color 0.3s, background 0.3s;
+}
+.result-card.has-path { border-color: #fde68a; background: linear-gradient(135deg, #fffbeb, #fefce8); }
+
+.result-placeholder { text-align: center; color: #9ca3af; font-size: 0.85rem; padding: 8px 0; font-style: italic; }
+
+.result-path-display {
+  font-family: 'Fira Code', monospace; font-size: 0.85rem; font-weight: 500;
+  color: #92400e; background: #fef3c7; border: 1.5px solid #fde68a;
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+  word-break: break-word; line-height: 1.6;
+}
+
+.stats-row { display: flex; gap: 10px; }
+.stat-box {
+  flex: 1; background: white; border: 2px solid #e5e7eb;
+  border-radius: 12px; padding: 10px; text-align: center;
+}
+.stat-box.jumps { border-color: #a5f3fc; background: #f0fdff; }
+.stat-box.cost  { border-color: #bbf7d0; background: #f0fdf4; }
+.stat-num { font-size: 1.6rem; font-weight: 800; line-height: 1; color: #111827; }
+.stat-box.jumps .stat-num { color: #0891b2; }
+.stat-box.cost  .stat-num { color: #16a34a; }
+.stat-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-top: 3px; }
+
+/* Legend */
+.legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 600; color: #374151; }
+.l-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(0,0,0,0.1); }
+.l-line { width: 22px; height: 4px; border-radius: 3px; flex-shrink: 0; }
+
+/* How it works */
+.how-step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.how-step:last-child { margin-bottom: 0; }
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, #4ade80, #22c55e); color: white;
+  font-size: 0.7rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+}
+.step-text { font-size: 0.79rem; color: #4b5563; line-height: 1.5; }
+.step-text strong { color: #166534; }
+
+/* Pond */
+.pond-area { display: flex; flex-direction: column; gap: 0; }
+.pond-card {
+  background: white; border-radius: 22px; border: 2px solid #e5e7eb;
+  overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+.pond-header {
+  padding: 13px 20px; border-bottom: 2px solid #f3f4f6;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pond-header-title { font-size: 0.85rem; font-weight: 700; color: #374151; display: flex; align-items: center; gap: 7px; }
+.pond-status { font-size: 0.75rem; font-weight: 700; color: #6b7280; background: #f3f4f6; padding: 4px 12px; border-radius: 20px; }
+.pond-status.ready { background: #dcfce7; color: #15803d; }
+.pond-status.found { background: #fef3c7; color: #92400e; }
+
+.pond-canvas-wrap {
+  background: radial-gradient(ellipse 80% 70% at 50% 60%, #dbeafe 0%, #e0f2fe 40%, #f0fdf4 100%);
+  padding: 8px;
+}
+canvas { display: block; width: 100%; height: auto; border-radius: 14px; }
+
+#tooltip {
+  position: fixed; background: #1f2937; color: white;
+  border-radius: 10px; padding: 7px 13px;
+  font-size: 0.78rem; font-weight: 600;
+  font-family: 'Baloo 2', sans-serif;
+  pointer-events: none; opacity: 0; transition: opacity 0.15s;
+  z-index: 999; white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+
+@media (max-width: 720px) {
+  .main { grid-template-columns: 1fr; }
+  .header { padding: 14px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>🐸 Frog Jump Path Finder</h1>
+    <p>Graph Traversal · Shortest Path Visualizer</p>
+  </div>
+  <div class="algo-badge">⚡ BFS Algorithm</div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+
+    <div class="card">
+      <div class="card-title">⚙️ Configure</div>
+      <div class="field">
+        <label>🪷 Number of Lily Pads</label>
+        <input type="number" id="numPads" value="10" min="4" max="20" />
+      </div>
+      <div class="field">
+        <label>🟢 Start Pad</label>
+        <input type="number" id="startPad" value="1" min="1" />
+      </div>
+      <div class="field">
+        <label>🔴 End Pad</label>
+        <input type="number" id="endPad" value="8" min="1" />
+      </div>
+      <br/>
+      <button class="btn btn-create" onclick="createPond()">🌿 Create Pond</button>
+      <button class="btn btn-find" id="findBtn" onclick="findPath()" disabled>🐸 Find Shortest Path</button>
+    </div>
+
+    <div class="result-card" id="resultCard">
+      <div class="card-title" style="margin-bottom:10px">📊 Result</div>
+      <div class="result-placeholder" id="resultPlaceholder">Run the algorithm to see results here.</div>
+      <div id="resultContent" style="display:none">
+        <div class="result-path-display" id="pathDisplay"></div>
+        <div class="stats-row">
+          <div class="stat-box jumps">
+            <div class="stat-num" id="statJumps">—</div>
+            <div class="stat-lbl">Jumps</div>
+          </div>
+          <div class="stat-box cost">
+            <div class="stat-num" id="statCost">—</div>
+            <div class="stat-lbl">Total Cost</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗺️ Legend</div>
+      <div class="legend-grid">
+        <div class="legend-item"><div class="l-dot" style="background:#22c55e"></div>Normal Pad</div>
+        <div class="legend-item"><div class="l-dot" style="background:#3b82f6"></div>Start Pad</div>
+        <div class="legend-item"><div class="l-dot" style="background:#ef4444"></div>End Pad</div>
+        <div class="legend-item"><div class="l-dot" style="background:#f59e0b"></div>Path Pad</div>
+        <div class="legend-item"><div class="l-line" style="background:#d1d5db;border:1px dashed #9ca3af"></div>Edge</div>
+        <div class="legend-item"><div class="l-line" style="background:#f59e0b"></div>Shortest Path</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📖 How It Works</div>
+      <div class="how-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Each <strong>lily pad</strong> is a node. Lines between them are edges with a cost.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>BFS</strong> explores neighbors level by level using a queue.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">3</div>
+        <div class="step-text">The <strong>first time</strong> the end pad is reached = shortest path!</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">4</div>
+        <div class="step-text">The 🐸 frog then <strong>animates</strong> along the path with arc jumps.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pond-area">
+    <div class="pond-card">
+      <div class="pond-header">
+        <div class="pond-header-title">🌊 Pond Simulation</div>
+        <div class="pond-status" id="pondStatus">Not created yet</div>
+      </div>
+      <div class="pond-canvas-wrap">
+        <canvas id="pondCanvas" width="760" height="500"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+const canvas = document.getElementById('pondCanvas');
+const ctx = canvas.getContext('2d');
+const W = 760, H = 500, PAD_R = 26;
+
+let pads = [], edges = [], pathNodes = [], pathEdgeSet = new Set();
+let frogX = -9999, frogY = -9999, frogAngle = 0;
+let animating = false, animIdx = 0, animT = 0, lastTs = 0;
+let hoveredPad = -1, ripples = [];
+
+// helpers
+function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
+function eKey(a,b){ return Math.min(a,b)+'-'+Math.max(a,b); }
+
+function rndPos(existing){
+  const pad=58;
+  for(let t=0;t<500;t++){
+    const x=pad+Math.random()*(W-pad*2), y=pad+Math.random()*(H-pad*2);
+    if(existing.every(p=>Math.hypot(p.x-x,p.y-y)>PAD_R*3.1)) return {x,y};
+  }
+  return {x:pad+Math.random()*(W-pad*2), y:pad+Math.random()*(H-pad*2)};
+}
+
+function buildGraph(n){
+  pads=[]; edges=[];
+  for(let i=0;i<n;i++) pads.push({id:i+1,...rndPos(pads)});
+  const adj=Array.from({length:n},()=>new Set());
+  for(let i=0;i<n;i++){
+    const sorted=pads.map((p,j)=>({j,d:dist(pads[i],p)})).filter(x=>x.j!==i).sort((a,b)=>a.d-b.d);
+    const k=2+Math.floor(Math.random()*2);
+    for(let c=0;c<Math.min(k,sorted.length);c++){
+      const j=sorted[c].j;
+      if(!adj[i].has(j)){
+        adj[i].add(j); adj[j].add(i);
+        edges.push([i,j,Math.max(1,Math.round(dist(pads[i],pads[j])/55))]);
+      }
+    }
+  }
+  // ensure connectivity
+  const vis=new Set([0]),q=[0];
+  while(q.length){const c=q.shift();adj[c].forEach(nb=>{if(!vis.has(nb)){vis.add(nb);q.push(nb);}});}
+  pads.forEach((_,i)=>{
+    if(!vis.has(i)){
+      let best=-1,bd=Infinity;
+      vis.forEach(v=>{const d=dist(pads[i],pads[v]);if(d<bd){bd=d;best=v;}});
+      if(best>=0&&!adj[i].has(best)){
+        adj[i].add(best);adj[best].add(i);
+        edges.push([i,best,Math.max(1,Math.round(dist(pads[i],pads[best])/55))]);
+        vis.add(i);
+      }
+    }
+  });
+}
+
+function bfs(si,ei){
+  const adj=Array.from({length:pads.length},()=>[]);
+  edges.forEach(([a,b])=>{adj[a].push(b);adj[b].push(a);});
+  const vis=new Set([si]),q=[[si,[si]]];
+  while(q.length){
+    const [cur,path]=q.shift();
+    if(cur===ei) return path;
+    adj[cur].forEach(nb=>{if(!vis.has(nb)){vis.add(nb);q.push([nb,[...path,nb]]);}});
+  }
+  return null;
+}
+
+// ── draw helpers ──────────────────────────────────────────────────────────
+function drawBg(){
+  const g=ctx.createRadialGradient(W/2,H*.55,40,W/2,H*.55,W*.65);
+  g.addColorStop(0,'#dbeafe'); g.addColorStop(.55,'#e0f2fe'); g.addColorStop(1,'#f0fdf4');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.roundRect(0,0,W,H,14); ctx.fill();
+  ctx.save(); ctx.globalAlpha=0.07;
+  for(let y=18;y<H;y+=26){
+    ctx.beginPath(); ctx.moveTo(0,y);
+    for(let x=0;x<=W;x+=20) ctx.lineTo(x,y+Math.sin(x*.04+y*.03)*3);
+    ctx.strokeStyle='#38bdf8'; ctx.lineWidth=1; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawRipples(){
+  ripples=ripples.filter(r=>r.a>0.01);
+  ripples.forEach(r=>{
+    ctx.save(); ctx.globalAlpha=r.a;
+    ctx.strokeStyle='#38bdf8'; ctx.lineWidth=1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+    r.r+=1.4; r.a*=0.93;
+  });
+}
+
+function drawEdges(){
+  edges.forEach(([a,b,cost])=>{
+    const pa=pads[a],pb=pads[b],isP=pathEdgeSet.has(eKey(a,b));
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y);
+    if(isP){
+      ctx.strokeStyle='#f59e0b'; ctx.lineWidth=4;
+      ctx.shadowColor='rgba(245,158,11,.5)'; ctx.shadowBlur=10; ctx.setLineDash([]);
+    } else {
+      ctx.strokeStyle='rgba(100,160,100,.3)'; ctx.lineWidth=1.8; ctx.setLineDash([6,5]);
+    }
+    ctx.stroke(); ctx.restore();
+
+    // cost bubble
+    const mx=(pa.x+pb.x)/2, my=(pa.y+pb.y)/2;
+    const dx=pb.x-pa.x, dy=pb.y-pa.y, len=Math.hypot(dx,dy)||1;
+    const ox=-dy/len*12, oy=dx/len*12;
+    const cx=mx+ox, cy=my+oy;
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.1)'; ctx.shadowBlur=5;
+    ctx.fillStyle=isP?'#fef3c7':'rgba(255,255,255,.92)';
+    ctx.strokeStyle=isP?'#fbbf24':'rgba(156,163,175,.55)';
+    ctx.lineWidth=isP?2:1.5; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.roundRect(cx-11,cy-10,22,20,5); ctx.fill(); ctx.stroke();
+    ctx.font=`bold 10px "Fira Code",monospace`;
+    ctx.fillStyle=isP?'#92400e':'#6b7280';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(cost,cx,cy+.5);
+    ctx.restore();
+  });
+}
+
+function drawPad(pad,type){
+  const {x,y}=pad, isH=hoveredPad===pad.id, r=PAD_R*(isH?1.12:1);
+  const S={
+    normal:{c:['#bbf7d0','#22c55e','#15803d'],rim:'#4ade80',t:'white'},
+    start: {c:['#bfdbfe','#3b82f6','#1d4ed8'],rim:'#93c5fd',t:'white'},
+    end:   {c:['#fecaca','#ef4444','#b91c1c'],rim:'#fca5a5',t:'white'},
+    path:  {c:['#fef3c7','#f59e0b','#b45309'],rim:'#fde68a',t:'white'},
+  };
+  const s=S[type]||S.normal;
+  ctx.save(); ctx.translate(x,y);
+  if(isH||type!=='normal'){ctx.shadowColor=s.rim; ctx.shadowBlur=isH?18:14;}
+
+  // drop shadow
+  ctx.save(); ctx.globalAlpha=.13; ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(2,5,r*.9,r*.38,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+
+  // body
+  const gr=ctx.createRadialGradient(-r*.25,-r*.25,r*.05,0,0,r);
+  gr.addColorStop(0,s.c[0]); gr.addColorStop(.55,s.c[1]); gr.addColorStop(1,s.c[2]);
+  ctx.beginPath();
+  for(let i=0;i<=64;i++){
+    const a=(i/64)*Math.PI*2, w=1+.034*Math.sin(a*5+pad.id*1.3);
+    const px=Math.cos(a)*r*w, py=Math.sin(a)*r*.88*w;
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.closePath(); ctx.fillStyle=gr; ctx.fill();
+  ctx.strokeStyle=s.rim; ctx.lineWidth=2.2; ctx.setLineDash([]); ctx.stroke();
+
+  // veins
+  ctx.save(); ctx.globalAlpha=.18; ctx.strokeStyle=s.c[0]; ctx.lineWidth=1;
+  for(let v=0;v<5;v++){
+    const va=(v/5)*Math.PI*2+pad.id*.5;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(va)*r*.8,Math.sin(va)*r*.7); ctx.stroke();
+  }
+  ctx.restore();
+
+  // notch
+  ctx.save(); ctx.globalCompositeOperation='destination-out'; ctx.globalAlpha=.32;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,r*.5,-.28,.28); ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // badge
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(0,0,0,.2)'; ctx.beginPath(); ctx.arc(0,0,11,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='white'; ctx.font=`bold 12px "Baloo 2",sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(pad.id,0,1);
+  ctx.restore();
+}
+
+function drawFrog(x,y,angle){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
+  ctx.save(); ctx.globalAlpha=.18; ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(1,7,11,4,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+  const bg=ctx.createRadialGradient(-3,-4,1,0,0,13);
+  bg.addColorStop(0,'#d9f99d'); bg.addColorStop(.5,'#84cc16'); bg.addColorStop(1,'#4d7c0f');
+  ctx.shadowColor='#84cc16'; ctx.shadowBlur=12;
+  ctx.beginPath(); ctx.ellipse(0,0,13,10,0,0,Math.PI*2); ctx.fillStyle=bg; ctx.fill();
+  ctx.globalAlpha=.42; ctx.fillStyle='#ecfccb';
+  ctx.beginPath(); ctx.ellipse(0,2,7,6,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+  [[-5,-7],[5,-7]].forEach(([ex,ey])=>{
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#365314'; ctx.beginPath(); ctx.arc(ex,ey,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(ex,ey,2.7,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(ex+.4,ey,1.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(ex+.9,ey-.5,.5,0,Math.PI*2); ctx.fill();
+  });
+  ctx.beginPath(); ctx.arc(0,-1,5,.25,Math.PI-.25);
+  ctx.strokeStyle='#365314'; ctx.lineWidth=1.5; ctx.setLineDash([]); ctx.stroke();
+  ctx.restore();
+}
+
+function arcPos(from,to,t){
+  const x=from.x+(to.x-from.x)*t;
+  const h=Math.min(68,dist(from,to)*.38);
+  const y=from.y+(to.y-from.y)*t - h*Math.sin(t*Math.PI);
+  return {x,y,angle:Math.atan2(to.y-from.y,to.x-from.x)};
+}
+
+function drawScene(){
+  ctx.clearRect(0,0,W,H); drawBg(); drawRipples(); drawEdges();
+  const si=parseInt(document.getElementById('startPad').value);
+  const ei=parseInt(document.getElementById('endPad').value);
+  const ps=new Set(pathNodes.map(i=>pads[i].id));
+  pads.forEach(p=>{
+    let type='normal';
+    if(pathNodes.length){
+      if(p.id===si) type='start';
+      else if(p.id===ei) type='end';
+      else if(ps.has(p.id)) type='path';
+    }
+    drawPad(p,type);
+  });
+  if(frogX>-9000) drawFrog(frogX,frogY,frogAngle);
+}
+
+// anim loop
+function animFrame(ts){
+  if(!animating) return;
+  const dt=Math.min((ts-lastTs)/1000,.05); lastTs=ts;
+  animT+=dt*1.5;
+  if(animT>=1){
+    animT=0; animIdx++;
+    if(animIdx<pathNodes.length){
+      const p=pads[pathNodes[animIdx]];
+      for(let i=0;i<3;i++) ripples.push({x:p.x,y:p.y,r:PAD_R+i*9,a:.45-i*.1});
+    }
+    if(animIdx>=pathNodes.length-1){
+      const last=pads[pathNodes[pathNodes.length-1]];
+      frogX=last.x; frogY=last.y; frogAngle=0; animating=false; drawScene(); return;
+    }
+  }
+  const from=pads[pathNodes[animIdx]], to=pads[pathNodes[animIdx+1]];
+  const pos=arcPos(from,to,animT);
+  frogX=pos.x; frogY=pos.y; frogAngle=pos.angle;
+  drawScene(); requestAnimationFrame(animFrame);
+}
+
+// actions
+function createPond(){
+  const n=Math.max(4,Math.min(20,parseInt(document.getElementById('numPads').value)||10));
+  document.getElementById('numPads').value=n;
+  const cl=v=>Math.max(1,Math.min(n,v||1));
+  const si=cl(parseInt(document.getElementById('startPad').value));
+  const ei=cl(parseInt(document.getElementById('endPad').value));
+  document.getElementById('startPad').value=si;
+  document.getElementById('endPad').value=ei;
+
+  buildGraph(n); pathNodes=[]; pathEdgeSet.clear(); ripples=[]; animating=false;
+  const idx=pads.findIndex(p=>p.id===si);
+  frogX=pads[idx>=0?idx:0].x; frogY=pads[idx>=0?idx:0].y; frogAngle=0;
+
+  document.getElementById('findBtn').disabled=false;
+  document.getElementById('pondStatus').textContent=n+' pads ready';
+  document.getElementById('pondStatus').className='pond-status ready';
+  document.getElementById('resultPlaceholder').style.display='';
+  document.getElementById('resultPlaceholder').textContent='Pond created! Now find the path.';
+  document.getElementById('resultPlaceholder').style.color='';
+  document.getElementById('resultContent').style.display='none';
+  document.getElementById('resultCard').classList.remove('has-path');
+  drawScene();
+}
+
+function findPath(){
+  if(!pads.length) return;
+  const n=pads.length, cl=v=>Math.max(1,Math.min(n,v||1));
+  const si=cl(parseInt(document.getElementById('startPad').value));
+  const ei=cl(parseInt(document.getElementById('endPad').value));
+  document.getElementById('startPad').value=si;
+  document.getElementById('endPad').value=ei;
+  const sIdx=pads.findIndex(p=>p.id===si), eIdx=pads.findIndex(p=>p.id===ei);
+  if(sIdx<0||eIdx<0) return;
+
+  const result=bfs(sIdx,eIdx);
+  if(!result){
+    document.getElementById('resultPlaceholder').style.display='';
+    document.getElementById('resultPlaceholder').textContent='❌ No path found!';
+    document.getElementById('resultPlaceholder').style.color='#ef4444';
+    document.getElementById('resultContent').style.display='none'; return;
+  }
+
+  pathNodes=result; pathEdgeSet.clear();
+  let totalCost=0;
+  for(let i=0;i<result.length-1;i++){
+    const a=result[i],b=result[i+1]; pathEdgeSet.add(eKey(a,b));
+    const e=edges.find(([ea,eb])=>(ea===a&&eb===b)||(ea===b&&eb===a));
+    if(e) totalCost+=e[2];
+  }
+
+  document.getElementById('pathDisplay').textContent=result.map(i=>'Pad '+pads[i].id).join(' → ');
+  document.getElementById('statJumps').textContent=result.length-1;
+  document.getElementById('statCost').textContent=totalCost;
+  document.getElementById('resultPlaceholder').style.display='none';
+  document.getElementById('resultContent').style.display='';
+  document.getElementById('resultCard').classList.add('has-path');
+  document.getElementById('pondStatus').textContent='Path found! '+( result.length-1)+' jumps';
+  document.getElementById('pondStatus').className='pond-status found';
+
+  animIdx=0; animT=0; animating=true; ripples=[]; lastTs=0;
+  requestAnimationFrame(ts=>{lastTs=ts; requestAnimationFrame(animFrame);});
+}
+
+// mouse
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect(), sx=W/r.width, sy=H/r.height;
+  const mx=(e.clientX-r.left)*sx, my=(e.clientY-r.top)*sy;
+  const hit=pads.find(p=>dist(p,{x:mx,y:my})<PAD_R+10);
+  hoveredPad=hit?hit.id:-1;
+  const tip=document.getElementById('tooltip');
+  if(hit){
+    const nb=edges.filter(([a,b])=>a===pads.indexOf(hit)||b===pads.indexOf(hit)).length;
+    tip.textContent='Pad #'+hit.id+' · '+nb+' neighbor'+(nb!==1?'s':'');
+    tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY-38)+'px'; tip.style.opacity=1;
+    canvas.style.cursor='pointer';
+  } else { tip.style.opacity=0; canvas.style.cursor='default'; }
+  if(!animating&&pads.length) drawScene();
+});
+
+canvas.addEventListener('mouseleave',()=>{
+  hoveredPad=-1; document.getElementById('tooltip').style.opacity=0;
+  if(!animating&&pads.length) drawScene();
+});
+
+canvas.addEventListener('click',e=>{
+  const r=canvas.getBoundingClientRect(), sx=W/r.width, sy=H/r.height;
+  const mx=(e.clientX-r.left)*sx, my=(e.clientY-r.top)*sy;
+  const hit=pads.find(p=>dist(p,{x:mx,y:my})<PAD_R+8);
+  if(hit){
+    const cur=parseInt(document.getElementById('startPad').value);
+    if(hit.id!==cur) document.getElementById('startPad').value=hit.id;
+    else document.getElementById('endPad').value=hit.id;
+  }
+});
+
+// init splash
+(function(){
+  ctx.beginPath(); ctx.roundRect(0,0,W,H,14);
+  const g=ctx.createRadialGradient(W/2,H*.55,40,W/2,H*.55,W*.65);
+  g.addColorStop(0,'#dbeafe'); g.addColorStop(1,'#f0fdf4');
+  ctx.fillStyle=g; ctx.fill();
+  ctx.font="600 16px 'Baloo 2',sans-serif";
+  ctx.fillStyle='rgba(74,180,100,.5)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🌿 Click "Create Pond" to generate lily pads',W/2,H/2);
+})();
+</script>
+</body>
+</html>
